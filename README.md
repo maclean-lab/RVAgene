@@ -1,5 +1,8 @@
 # RVAgene : Recurrent Variational Auto gene encoder
-## Software demonstration for the paper "Generative modeling of gene expression time series data with RVAgene"
+
+## Working principle demonstration for the paper "Generative modeling of gene expression time series data with RVAgene"
+
+
 
 `data` : contains example synthetic gene expression time series data with 6 inherent clusters
 `rvagene` : contains code for recurrent variational autoencoder
