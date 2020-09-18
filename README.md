@@ -25,6 +25,8 @@ python train_and_gen.py <dataset_name> e.g. `python train_and_gen.py simfinal`
 1. Thanks to open source implementation of recurrent VAE  at https://github.com/tejaslodaya/timeseries-clustering-vae
 2. Relevant research works as cited in the work.
 
+### Contributors
+
 <a href="https://github.com/maclean-lab/RVAgene/graphs/contributors">
   <img src="https://contributors-img.web.app/image?repo=maclean-lab/RVAgene" />
 </a>
