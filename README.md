@@ -18,6 +18,8 @@
 2. numpy, matplotlib, pytorch
 3. GPU (optional).
 
+### Run instruction
+python train_and_gen.py <dataset_name> e.g. `python train_and_gen.py simfinal`
 ### Acknowledgments
 
 1. Thanks to open source implementation of recurrent VAE  at https://github.com/tejaslodaya/timeseries-clustering-vae
