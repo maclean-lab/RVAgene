@@ -2,11 +2,10 @@ import numpy as np
 import torch
 from torch import nn, optim
 from torch import distributions
-from .base import BaseEstimator
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 import os
-
+from sklearn.base import BaseEstimator
 
 class Encoder(nn.Module):
     """
@@ -375,7 +374,7 @@ class RVAgene(BaseEstimator, nn.Module):
     def reconstruct(self, dataset, save = False):
         """
         Given input dataset, creates dataloader, runs dataloader on `_batch_reconstruct`
-        Prerequisite is that model has to be fit
+        
 
         :param dataset: input dataset who's output vectors are to be obtained
         :param bool save: If true, dumps the output vector dataframe as a pickle file
@@ -389,26 +388,26 @@ class RVAgene(BaseEstimator, nn.Module):
                                  shuffle = False,
                                  drop_last=True) # Don't shuffle for test_loader
 
-        if self.is_fitted:
-            with torch.no_grad():
-                x_decoded = []
+        
+        with torch.no_grad():
+            x_decoded = []
 
-                for t, x in enumerate(test_loader):
-                    x = x[0]
-                    x = x.permute(1, 0, 2)
+            for t, x in enumerate(test_loader):
+                x = x[0]
+                x = x.permute(1, 0, 2)
 
-                    x_decoded_each = self._batch_reconstruct(x)
-                    x_decoded.append(x_decoded_each)
+                x_decoded_each = self._batch_reconstruct(x)
+                x_decoded.append(x_decoded_each)
 
-                x_decoded = np.concatenate(x_decoded, axis=1)
+            x_decoded = np.concatenate(x_decoded, axis=1)
 
-                if save:
-                    if os.path.exists(self.dload):
-                        pass
-                    else:
-                        os.mkdir(self.dload)
-                    x_decoded.dump(self.dload + '/z_run.pkl')
-                return x_decoded
+            if save:
+                if os.path.exists(self.dload):
+                    pass
+                else:
+                    os.mkdir(self.dload)
+                x_decoded.dump(self.dload + '/z_run.pkl')
+            return x_decoded
 
         raise RuntimeError('Model needs to be fit')
 
@@ -416,7 +415,7 @@ class RVAgene(BaseEstimator, nn.Module):
     def transform(self, dataset, save = False):
         """
         Given input dataset, creates dataloader, runs dataloader on `_batch_transform`
-        Prerequisite is that model has to be fit
+        
 
         :param dataset: input dataset who's latent vectors are to be obtained
         :param bool save: If true, dumps the latent vector dataframe as a pickle file
@@ -428,25 +427,25 @@ class RVAgene(BaseEstimator, nn.Module):
                                  batch_size = self.batch_size,
                                  shuffle = False,
                                  drop_last=True) # Don't shuffle for test_loader
-        if self.is_fitted:
-            with torch.no_grad():
-                z_run = []
+        
+        with torch.no_grad():
+            z_run = []
 
-                for t, x in enumerate(test_loader):
-                    x = x[0]
-                    x = x.permute(1, 0, 2)
+            for t, x in enumerate(test_loader):
+                x = x[0]
+                x = x.permute(1, 0, 2)
 
-                    z_run_each = self._batch_transform(x)
-                    z_run.append(z_run_each)
+                z_run_each = self._batch_transform(x)
+                z_run.append(z_run_each)
 
-                z_run = np.concatenate(z_run, axis=0)
-                if save:
-                    if os.path.exists(self.dload):
-                        pass
-                    else:
-                        os.mkdir(self.dload)
-                    z_run.dump(self.dload + '/z_run.pkl')
-                return z_run
+            z_run = np.concatenate(z_run, axis=0)
+            if save:
+                if os.path.exists(self.dload):
+                    pass
+                else:
+                    os.mkdir(self.dload)
+                z_run.dump(self.dload + '/z_run.pkl')
+            return z_run
 
         raise RuntimeError('Model needs to be fit')
 
