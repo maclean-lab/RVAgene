@@ -1,3 +1,5 @@
+## citation : https://github.com/tejaslodaya/timeseries-clustering-vae
+
 import numpy as np
 import torch
 from torch import nn, optim
@@ -6,145 +8,12 @@ from torch.utils.data import DataLoader
 from torch.autograd import Variable
 import os
 from sklearn.base import BaseEstimator
-
-class Encoder(nn.Module):
-    """
-    Encoder network containing enrolled LSTM/GRU
-
-    :param number_of_features: number of input features
-    :param hidden_size: hidden size of the RNN
-    :param hidden_layer_depth: number of layers in RNN
-    :param latent_length: latent vector length
-    :param dropout: percentage of nodes to dropout
-    :param block: LSTM
-    """
-    def __init__(self, number_of_features, hidden_size, hidden_layer_depth, latent_length, dropout, block = 'LSTM'):
-
-        super(Encoder, self).__init__()
-
-        self.number_of_features = number_of_features
-        self.hidden_size = hidden_size
-        self.hidden_layer_depth = hidden_layer_depth
-        self.latent_length = latent_length
-
-        if block == 'LSTM':
-            self.model = nn.LSTM(self.number_of_features, self.hidden_size, self.hidden_layer_depth, dropout = dropout)
-        else:
-            raise NotImplementedError
-
-    def forward(self, x):
-        """Forward propagation of encoder. Given input, outputs the last hidden state of encoder
-
-        :param x: input to the encoder, of shape (sequence_length, batch_size, number_of_features)
-        :return: last hidden state of encoder, of shape (batch_size, hidden_size)
-        """
-
-        _, (h_end, c_end) = self.model(x)
-
-        h_end = h_end[0, :, :]
-        return h_end
-
-
-class Lambda(nn.Module):
-    """Lambda module converts output of encoder to latent vector
-
-    :param hidden_size: hidden size of the encoder
-    :param latent_length: latent vector length
-    """
-    def __init__(self, hidden_size, latent_length):
-        super(Lambda, self).__init__()
-
-        self.hidden_size = hidden_size
-        self.latent_length = latent_length
-
-        self.hidden_to_mean = nn.Linear(self.hidden_size, self.latent_length)
-        self.hidden_to_logvar = nn.Linear(self.hidden_size, self.latent_length)
-
-        nn.init.xavier_uniform_(self.hidden_to_mean.weight)
-        nn.init.xavier_uniform_(self.hidden_to_logvar.weight)
-
-    def forward(self, cell_output):
-        """Given last hidden state of encoder, passes through a linear layer, and finds the mean and variance
-
-        :param cell_output: last hidden state of encoder
-        :return: latent vector
-        """
-
-        self.latent_mean = self.hidden_to_mean(cell_output)
-        self.latent_logvar = self.hidden_to_logvar(cell_output)
-
-        if self.training:
-            std = torch.exp(0.5 * self.latent_logvar)
-            eps = torch.randn_like(std)
-            return eps.mul(std).add_(self.latent_mean)
-        else:
-            return self.latent_mean
-
-class Decoder(nn.Module):
-    """Converts latent vector into output
-
-    :param sequence_length: length of the input sequence
-    :param batch_size: batch size of the input sequence
-    :param hidden_size: hidden size of the RNN
-    :param hidden_layer_depth: number of layers in RNN
-    :param latent_length: latent vector length
-    :param output_size: 2, one representing the mean, other log std dev of the output
-    :param block: LSTM
-    :param dtype: Depending on cuda enabled/disabled, create the tensor
-    """
-    def __init__(self, sequence_length, batch_size, hidden_size, hidden_layer_depth, latent_length, output_size, dtype, block='LSTM'):
-
-        super(Decoder, self).__init__()
-
-        self.hidden_size = hidden_size
-        self.batch_size = batch_size
-        self.sequence_length = sequence_length
-        self.hidden_layer_depth = hidden_layer_depth
-        self.latent_length = latent_length
-        self.output_size = output_size
-        self.dtype = dtype
-
-        if block == 'LSTM':
-            self.model = nn.LSTM(1, self.hidden_size, self.hidden_layer_depth)
-        else:
-            raise NotImplementedError
-
-        self.latent_to_hidden = nn.Linear(self.latent_length, self.hidden_size)
-        self.hidden_to_output = nn.Linear(self.hidden_size, self.output_size)
-
-        self.decoder_inputs = torch.zeros(self.sequence_length, self.batch_size, 1, requires_grad=True).type(self.dtype)
-        self.c_0 = torch.zeros(self.hidden_layer_depth, self.batch_size, self.hidden_size, requires_grad=True).type(self.dtype)
-
-        nn.init.xavier_uniform_(self.latent_to_hidden.weight)
-        nn.init.xavier_uniform_(self.hidden_to_output.weight)
-
-    def forward(self, latent):
-        """Converts latent to hidden to output
-
-        :param latent: latent vector
-        :return: outputs consisting of mean and std dev of vector
-        """
-        h_state = self.latent_to_hidden(latent)
-
-        if isinstance(self.model, nn.LSTM):
-            h_0 = torch.stack([h_state for _ in range(self.hidden_layer_depth)])
-            decoder_output, _ = self.model(self.decoder_inputs, (h_0, self.c_0))
-        elif isinstance(self.model, nn.GRU):
-            h_0 = torch.stack([h_state for _ in range(self.hidden_layer_depth)])
-            decoder_output, _ = self.model(self.decoder_inputs, h_0)
-        else:
-            raise NotImplementedError
-
-        out = self.hidden_to_output(decoder_output)
-        return out
-
-def _assert_no_grad(tensor):
-    assert not tensor.requires_grad, \
-        "nn criterions don't compute the gradient w.r.t. targets - please " \
-        "mark these tensors as not requiring gradients"
+from .encoder import Encoder
+from .decoder import Decoder
+from .lambda_mod import Lambda
 
 class RVAgene(BaseEstimator, nn.Module):
-    """Variational recurrent auto-encoder. This module is used for dimensionality reduction of timeseries
+    """Reurrent variational auto-encoder 
 
     :param sequence_length: length of the input sequence
     :param number_of_features: number of input features
@@ -163,11 +32,12 @@ class RVAgene(BaseEstimator, nn.Module):
     :param boolean clip: Gradient clipping to overcome explosion
     :param max_grad_norm: The grad-norm to be clipped
     :param dload: Download directory where models are to be dumped
+    :param log_file: File to log training loss , default None i.e. STDOUT
     """
     def __init__(self, sequence_length, number_of_features, hidden_size=90, hidden_layer_depth=2, latent_length=20,
                  batch_size=32, learning_rate=0.005, block='LSTM',
                  n_epochs=5, dropout_rate=0., optimizer='Adam', loss='MSELoss',
-                 cuda=False, print_every=100, clip=True, max_grad_norm=5, dload='.'):
+                 cuda=False, print_every=100, clip=True, max_grad_norm=5, dload='.', log_file=None):
 
         super(RVAgene, self).__init__()
 
@@ -215,6 +85,10 @@ class RVAgene(BaseEstimator, nn.Module):
         self.max_grad_norm = max_grad_norm
         self.is_fitted = False
         self.dload = dload
+        if(log_file is not None):
+            self.log_file = open(log_file,'w')
+        else:
+            self.log_file =  None
 
         if self.use_cuda:
             self.cuda()
@@ -315,10 +189,16 @@ class RVAgene(BaseEstimator, nn.Module):
             self.optimizer.step()
 
             if (t + 1) % self.print_every == 0:
-                print('Batch %d, loss = %.4f, recon_loss = %.4f, kl_loss = %.4f' % (t + 1, loss.item(),
+                if(self.log_file is not None):
+                    self.log_file.write('Batch %d, loss = %.4f, recon_loss = %.4f, kl_loss = %.4f\n' % (t + 1, loss.item(),
                                                                                     recon_loss.item(), kl_loss.item()))
-
-        print('Average loss: {:.4f}'.format(epoch_loss / t))
+                else:
+                    print('Batch %d, loss = %.4f, recon_loss = %.4f, kl_loss = %.4f' % (t + 1, loss.item(),
+                                                                                    recon_loss.item(), kl_loss.item()))
+        if(self.log_file is not None):
+                self.log_file.write('Average loss: {:.4f}\n'.format(epoch_loss / t))
+        else:
+            print('Average loss: {:.4f}'.format(epoch_loss / t))
 
 
     def fit(self, dataset, save = False):
@@ -334,9 +214,13 @@ class RVAgene(BaseEstimator, nn.Module):
                                   batch_size = self.batch_size,
                                   shuffle = True,
                                   drop_last=True)
-
+        if(self.log_file is not None):
+            print("Writing training log to given file, set log_file=None to log to STDOUT")
         for i in range(self.n_epochs):
-            print('Epoch: %s' % i)
+            if(self.log_file is not None):
+                self.log_file.write('Epoch: %s\n' % i)
+            else:
+                print('Epoch: %s' % i)
 
             self._train(train_loader)
 
