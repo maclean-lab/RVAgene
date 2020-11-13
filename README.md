@@ -11,6 +11,7 @@ RVAgene models gene expression dynamics in single-cell or bulk data. Read the pa
 
 ### Quickstart
   - Jupyter notebook demo of RVAgene [here](https://github.com/maclean-lab/RVAgene/blob/master/demo.ipynb)
+  - Jupyter notebook demo of processing bulk Single cell data and running RVAgene [here](https://github.com/maclean-lab/RVAgene/blob/master/single_cell_demo.ipynb)
   - Or on the command line
       - python gen_synthetic_data.py <dataset_name> e.g. `python gen_synthetic_data.py demosim`  
       - python train_and_gen.py <dataset_name> e.g. `python train_and_gen.py demosim`
