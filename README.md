@@ -1,3 +1,8 @@
+
+
+[![DOI](https://zenodo.org/badge/296531405.svg)](https://zenodo.org/badge/latestdoi/296531405)
+
+
 # RVAgene: modeling gene expression dynamics 
 
 ### Overview
