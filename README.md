@@ -52,9 +52,9 @@ boolean `clip`: Gradient clipping to overcome explosion <br />
 `dload`: Download directory where models are to be dumped <br />
 `log_file`: File to log training loss , default None i.e. STDOUT <br />
 
-###
+### Datasets
 Bulk RNA seq Data used in the paper from : https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE65525 (Klein et. al. 2015)
-scRNA seq Data used in the paper from : https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE98622 (Liu. et. al. , 20197) 
+scRNA seq Data used in the paper from : https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE98622 (Liu. et. al. , 2017) 
 ### Acknowledgments 
 1. Thanks to open source implementation of recurrent VAE  at https://github.com/tejaslodaya/timeseries-clustering-vae
 2. Relevant research works as cited in the work.
