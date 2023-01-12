@@ -6,7 +6,7 @@
 # RVAgene: modeling gene expression dynamics 
 
 ### Overview
-RVAgene models gene expression dynamics in single-cell or bulk data. Read the paper [here](https://www.biorxiv.org/content/10.1101/2020.11.10.375436v1).
+RVAgene models gene expression dynamics in single-cell or bulk data. Read the paper [here](https://academic.oup.com/bioinformatics/article/37/19/3252/6273572).
 
 ### Requirements
 1. Python 3
